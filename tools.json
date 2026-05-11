@@ -1,0 +1,224 @@
+[
+  {
+    "name": "get_my_profile",
+    "description": "Получить профиль текущего пользователя (роль, email, телефон)",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "api": {
+      "method": "GET",
+      "path": "/auth/me"
+    }
+  },
+  {
+    "name": "get_my_points",
+    "description": "Получить список торговых точек (магазинов) пользователя",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "api": {
+      "method": "GET",
+      "path": "/points"
+    }
+  },
+  {
+    "name": "get_suppliers",
+    "description": "Получить список поставщиков, доступных магазину",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "api": {
+      "method": "GET",
+      "path": "/companies/suppliers"
+    }
+  },
+  {
+    "name": "get_products",
+    "description": "Получить каталог товаров поставщика. Используй для поиска товара по названию или SKU.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "company_id": {
+          "type": "integer",
+          "description": "ID поставщика (company). Обязателен для фильтрации по конкретному поставщику."
+        },
+        "is_active": {
+          "type": "boolean",
+          "description": "Фильтр только активных товаров. Рекомендуется true.",
+          "default": true
+        }
+      },
+      "required": []
+    },
+    "api": {
+      "method": "GET",
+      "path": "/products",
+      "query_params": ["company_id", "is_active"]
+    }
+  },
+  {
+    "name": "get_pricat",
+    "description": "Получить прайс-каталог поставщика с ценами и скидками",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "company_id": {
+          "type": "integer",
+          "description": "ID поставщика"
+        }
+      },
+      "required": ["company_id"]
+    },
+    "api": {
+      "method": "GET",
+      "path": "/pricat/{company_id}"
+    }
+  },
+  {
+    "name": "get_promotions",
+    "description": "Получить активные акции поставщика. Проверяй перед оформлением заказа.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "company_id": {
+          "type": "integer",
+          "description": "ID поставщика"
+        }
+      },
+      "required": []
+    },
+    "api": {
+      "method": "GET",
+      "path": "/promotions",
+      "query_params": ["company_id"]
+    }
+  },
+  {
+    "name": "get_order_history",
+    "description": "Получить историю заказов магазина. Используй для ABC-анализа по частоте и объёму заказов конкретных товаров.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "point_id": {
+          "type": "integer",
+          "description": "ID торговой точки (магазина)"
+        },
+        "company_id": {
+          "type": "integer",
+          "description": "Фильтр по поставщику (опционально)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ACTIVE", "CONFIRMED", "SHIPPED", "CLOSED", "CANCELLED"],
+          "description": "Фильтр по статусу. Для анализа используй CLOSED и SHIPPED."
+        }
+      },
+      "required": []
+    },
+    "api": {
+      "method": "GET",
+      "path": "/orders",
+      "query_params": ["point_id", "company_id", "status"]
+    }
+  },
+  {
+    "name": "get_order_detail",
+    "description": "Получить детали конкретного заказа по его коду",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Код заказа, например ORD-0001"
+        }
+      },
+      "required": ["code"]
+    },
+    "api": {
+      "method": "GET",
+      "path": "/orders/{code}"
+    }
+  },
+  {
+    "name": "create_order",
+    "description": "Создать заказ поставщику. ТОЛЬКО после явного подтверждения пользователя ('да', 'подтверждаю', 'оформляй'). Один вызов = один поставщик.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "company_id": {
+          "type": "integer",
+          "description": "ID поставщика (company)"
+        },
+        "point_id": {
+          "type": "integer",
+          "description": "ID торговой точки (магазина), для которого делается заказ"
+        },
+        "delivery_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Желаемая дата доставки в формате YYYY-MM-DD"
+        },
+        "items": {
+          "type": "array",
+          "description": "Список позиций заказа",
+          "items": {
+            "type": "object",
+            "properties": {
+              "product_id": {
+                "type": "integer",
+                "description": "ID товара из каталога поставщика"
+              },
+              "quantity": {
+                "type": "integer",
+                "description": "Количество, кратное кванту поставки (min_order_qty)"
+              }
+            },
+            "required": ["product_id", "quantity"]
+          }
+        }
+      },
+      "required": ["company_id", "point_id", "items"]
+    },
+    "api": {
+      "method": "POST",
+      "path": "/orders"
+    }
+  },
+  {
+    "name": "cancel_order",
+    "description": "Отменить заказ. Только по явной просьбе пользователя.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Код заказа, например ORD-0001"
+        }
+      },
+      "required": ["code"]
+    },
+    "api": {
+      "method": "POST",
+      "path": "/orders/{code}/cancel"
+    }
+  },
+  {
+    "name": "get_categories",
+    "description": "Получить справочник категорий товаров",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "api": {
+      "method": "GET",
+      "path": "/references/categories"
+    }
+  }
+]
